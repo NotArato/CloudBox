@@ -1,40 +1,38 @@
 // Supabase Auth Helper Functions
 const Auth = {
     async getCurrentUser() {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) return null;
+        if (!window.supabaseClient) return null;
         
-        // Fetch or auto-create profile
-        let { data: profile } = await window.supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+        try {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session || !session.user) return null;
+            
+            // Try fetching profile from Supabase Database
+            let profile = null;
+            try {
+                const { data } = await window.supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                profile = data;
+            } catch (e) {
+                console.warn('Profile fetch warning:', e);
+            }
 
-        if (!profile) {
-            const { data: newProfile } = await window.supabaseClient
-                .from('profiles')
-                .insert({
-                    id: session.user.id,
+            return {
+                ...session.user,
+                profile: profile || {
                     name: session.user.user_metadata?.name || session.user.email.split('@')[0],
                     email: session.user.email,
                     is_premium: false,
-                    storage_limit: 1073741824 // 1GB
-                })
-                .select()
-                .single();
-            profile = newProfile;
+                    storage_limit: 1073741824
+                }
+            };
+        } catch (err) {
+            console.error('getCurrentUser error:', err);
+            return null;
         }
-
-        return {
-            ...session.user,
-            profile: profile || {
-                name: session.user.email.split('@')[0],
-                email: session.user.email,
-                is_premium: false,
-                storage_limit: 1073741824
-            }
-        };
     },
 
     async requireAuth() {
@@ -63,14 +61,19 @@ const Auth = {
 
         if (error) throw error;
 
+        // Try creating profile record (non-blocking if RLS/table pending)
         if (data.user) {
-            await window.supabaseClient.from('profiles').upsert({
-                id: data.user.id,
-                name: name,
-                email: email,
-                is_premium: false,
-                storage_limit: 1073741824
-            });
+            try {
+                await window.supabaseClient.from('profiles').upsert({
+                    id: data.user.id,
+                    name: name,
+                    email: email,
+                    is_premium: false,
+                    storage_limit: 1073741824
+                });
+            } catch (e) {
+                console.warn('Profile upsert warning:', e);
+            }
         }
 
         return data;
@@ -86,7 +89,9 @@ const Auth = {
     },
 
     async signOut() {
-        await window.supabaseClient.auth.signOut();
+        if (window.supabaseClient) {
+            await window.supabaseClient.auth.signOut();
+        }
         window.location.href = 'login.html';
     },
 
@@ -96,8 +101,7 @@ const Auth = {
 
         const { error } = await window.supabaseClient
             .from('profiles')
-            .update({ name })
-            .eq('id', user.id);
+            .upsert({ id: user.id, name, email: user.email });
 
         if (error) throw error;
     },
@@ -115,11 +119,12 @@ const Auth = {
 
         const { error } = await window.supabaseClient
             .from('profiles')
-            .update({ 
+            .upsert({ 
+                id: user.id,
+                email: user.email,
                 is_premium: true,
                 storage_limit: 5368709120 // 5GB
-            })
-            .eq('id', user.id);
+            });
 
         if (error) throw error;
     }
