@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - CloudBox</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1, h2, h3, h4, .font-heading { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body class="h-full flex bg-slate-50 text-slate-900 antialiased">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between hidden md:flex shrink-0 z-20 shadow-sm">
+        <div>
+            <!-- Brand Header -->
+            <div class="h-20 flex items-center px-6 border-b border-slate-100 gap-3.5">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight font-heading bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-800 bg-clip-text text-transparent block">CloudBox</span>
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-indigo-600 block -mt-1">Cloud Storage</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1">
+                <div class="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Main Menu</div>
+                <a href="index.html" class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                    My Storage
+                </a>
+                <a href="profile.html" class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-50 text-indigo-600 border border-indigo-200/80 shadow-xs">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Account Settings
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
+        <header class="h-20 bg-white border-b border-slate-200/90 px-6 sm:px-8 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-xs">
+            <h2 class="text-lg font-bold font-heading">Account Settings</h2>
+            <button onclick="Auth.signOut()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-semibold text-xs transition">Sign Out</button>
+        </header>
+
+        <main class="p-6 sm:p-8 max-w-3xl w-full mx-auto space-y-8">
+            <!-- Profile Info Form -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+                <h3 class="text-base font-bold font-heading text-slate-900 border-b border-slate-100 pb-3">Personal Information</h3>
+                
+                <div id="profileAlert" class="hidden p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium"></div>
+
+                <form id="profileForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
+                        <input type="text" id="profileName" required class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+                        <input type="email" id="profileEmail" disabled class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-400 text-sm">
+                    </div>
+                    <button type="submit" class="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition">Save Changes</button>
+                </form>
+            </div>
+
+            <!-- Password Update Form -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
+                <h3 class="text-base font-bold font-heading text-slate-900 border-b border-slate-100 pb-3">Update Password</h3>
+                
+                <div id="passwordAlert" class="hidden p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium"></div>
+
+                <form id="passwordForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">New Password</label>
+                        <input type="password" id="newPassword" minlength="6" required class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+                    </div>
+                    <button type="submit" class="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition">Update Password</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await Auth.requireAuth();
+            document.getElementById('profileName').value = user.profile?.name || '';
+            document.getElementById('profileEmail').value = user.email || '';
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('profileName').value.trim();
+            const alertEl = document.getElementById('profileAlert');
+
+            try {
+                await Auth.updateProfile(name);
+                alertEl.textContent = 'Profile updated successfully!';
+                alertEl.classList.remove('hidden');
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            const alertEl = document.getElementById('passwordAlert');
+
+            try {
+                await Auth.updatePassword(newPassword);
+                alertEl.textContent = 'Password changed successfully!';
+                alertEl.classList.remove('hidden');
+                document.getElementById('newPassword').value = '';
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+    </script>
+</body>
+</html>
