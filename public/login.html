@@ -65,6 +65,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             await Auth.redirectIfAuthenticated();
+
+            // Allow pressing Enter key on any input to submit form
+            const form = document.getElementById('loginForm');
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        form.requestSubmit();
+                    }
+                });
+            });
         });
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -73,6 +85,8 @@
             const password = document.getElementById('password').value;
             const alertEl = document.getElementById('errorAlert');
             const btn = document.getElementById('submitBtn');
+
+            if (!email || !password) return;
 
             alertEl.classList.add('hidden');
             btn.disabled = true;
