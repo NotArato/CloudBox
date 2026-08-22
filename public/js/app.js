@@ -237,6 +237,9 @@ function renderFiles() {
                 <td class="px-6 py-4 text-xs text-slate-500">${dateStr}</td>
                 <td class="px-6 py-4 align-middle">
                     <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openShareModal('${file.id}', '${escapeHtml(file.name)}')" class="w-8 h-8 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Share Link">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        </button>
                         <button onclick="downloadFile('${file.storage_path}', '${escapeHtml(file.original_name)}')" class="w-8 h-8 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Download">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         </button>
@@ -426,6 +429,52 @@ async function submitMoveFile(e) {
 
     closeModal('moveFileModal');
     loadData();
+}
+
+function openShareModal(fileId, fileName) {
+    document.getElementById('shareFileId').value = fileId;
+    document.getElementById('shareFileNameLabel').textContent = fileName;
+    document.getElementById('generatedLinkContainer').classList.add('hidden');
+    document.getElementById('copySuccessMsg').classList.add('hidden');
+    openModal('shareModal');
+}
+
+async function generateShareLink() {
+    const fileId = document.getElementById('shareFileId').value;
+    const days = parseInt(document.getElementById('shareExpirationSelect').value) || 1;
+    const btn = document.getElementById('generateLinkBtn');
+
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    try {
+        const shareToken = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+        const { error } = await window.supabaseClient.from('file_shares').insert({
+            file_id: fileId,
+            share_token: shareToken,
+            expires_at: expiresAt
+        });
+
+        if (error) throw error;
+
+        const shareUrl = `${window.location.origin}/share.html?token=${shareToken}`;
+        document.getElementById('shareLinkInput').value = shareUrl;
+        document.getElementById('generatedLinkContainer').classList.remove('hidden');
+    } catch (err) {
+        alert('Error generating share link: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Link';
+    }
+}
+
+function copyShareLink() {
+    const input = document.getElementById('shareLinkInput');
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    document.getElementById('copySuccessMsg').classList.remove('hidden');
 }
 
 function escapeHtml(str) {
