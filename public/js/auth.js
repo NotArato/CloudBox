@@ -111,21 +111,5 @@ const Auth = {
             password: newPassword
         });
         if (error) throw error;
-    },
-
-    async upgradeToPremium() {
-        const { data: { user } } = await window.supabaseClient.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-
-        const { error } = await window.supabaseClient
-            .from('profiles')
-            .upsert({ 
-                id: user.id,
-                email: user.email,
-                is_premium: true,
-                storage_limit: 5368709120 // 5GB
-            });
-
-        if (error) throw error;
     }
 };
